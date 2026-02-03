@@ -33,6 +33,12 @@ export default function Header() {
                 >
                   주식 현황
                 </Link>
+                <Link
+                  href="/games"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  게임
+                </Link>
                 <span className="text-gray-700 text-sm">
                   {user.username}님
                 </span>
