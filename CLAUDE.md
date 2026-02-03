@@ -12,18 +12,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Backend**: Python 3.12 + FastAPI
 - **Database**: SQLite (SQLAlchemy ORM)
 
-## 주요 명령어
+## 환경 요구사항
+
+- **Python**: 3.12+
+- **Node.js**: 18+
+- **Package Manager**: npm
 
 > 상세한 설치 및 포팅 가이드는 [Porting Guide](.claude/docs/Porting_guide.md)를 참조하세요.
 
-### Quick Start
+## 주요 명령어
+
+### 백엔드 (localhost:8000)
 
 ```bash
-# Backend (localhost:8000)
-cd backend && .venv\Scripts\activate && uvicorn app.main:app --reload
+# 가상환경 활성화 (Windows)
+cd backend && .venv\Scripts\activate
 
-# Frontend (localhost:3000)
-cd frontend && npm run dev
+# 가상환경 활성화 (Mac/Linux)
+cd backend && source .venv/bin/activate
+
+# 개발 서버 실행 (핫 리로드)
+uvicorn app.main:app --reload
+
+# 의존성 설치
+pip install -r requirements.txt
+
+# 데이터베이스 초기화 (자동 - 서버 첫 실행 시)
+# app.db 파일 삭제 후 서버 재시작하면 재생성
+```
+
+### 프론트엔드 (localhost:3000)
+
+```bash
+cd frontend
+
+# 개발 서버 실행
+npm run dev
+
+# 의존성 설치
+npm install
+
+# 프로덕션 빌드
+npm run build
+
+# 프로덕션 서버 실행
+npm start
+
+# 린트 검사
+npm run lint
 ```
 
 ## 아키텍처
@@ -32,27 +68,72 @@ cd frontend && npm run dev
 프론트엔드의 `/api/*` 요청은 `next.config.js`의 rewrites 설정을 통해 백엔드(localhost:8000)로 프록시됩니다.
 
 ### 백엔드 구조
+
 ```
-backend/app/
-├── main.py          # FastAPI 앱 진입점, 라우터 등록
-├── database.py      # SQLAlchemy 엔진, 세션, Base 클래스
-├── models/          # SQLAlchemy ORM 모델
-├── schemas/         # Pydantic 스키마 (요청/응답 검증)
-└── routers/         # API 엔드포인트 (APIRouter)
+backend/
+├── requirements.txt      # Python 의존성
+├── app.db               # SQLite 데이터베이스 (자동 생성)
+└── app/
+    ├── main.py          # FastAPI 앱 진입점, CORS, 라우터 등록
+    ├── database.py      # SQLAlchemy 엔진, 세션, Base, get_db()
+    ├── models/
+    │   ├── __init__.py  # 모델 export (__all__)
+    │   └── example.py   # Example ORM 모델 (샘플)
+    ├── schemas/
+    │   ├── __init__.py  # 스키마 export (__all__)
+    │   └── example.py   # Pydantic 스키마 (요청/응답)
+    └── routers/
+        ├── __init__.py
+        └── examples.py  # /api/examples CRUD 엔드포인트
 ```
 
+**주요 설계:**
+- CRUD 로직은 현재 routers에 직접 구현됨 (향후 crud/ 폴더 분리 권장)
+- 비즈니스 로직은 routers에 포함 (향후 services/ 폴더 분리 권장)
+- 의존성 주입: `get_db()` 함수를 FastAPI Depends로 사용
+
 ### 프론트엔드 구조
+
 ```
-frontend/src/
-├── app/             # Next.js App Router 페이지
-└── components/      # React 컴포넌트
+frontend/
+├── package.json          # 의존성 및 스크립트
+├── next.config.js        # API 프록시 설정
+├── tsconfig.json         # TypeScript 설정 (@/* alias)
+├── tailwind.config.ts    # Tailwind CSS 설정
+└── src/
+    └── app/
+        ├── globals.css   # Tailwind 전역 스타일
+        ├── layout.tsx    # Root 레이아웃
+        └── page.tsx      # 홈페이지 (예: /api/health 호출)
 ```
+
+**주요 설계:**
+- 현재는 단순 구조 (components/, lib/, hooks/, types/ 폴더 없음)
+- 향후 확장 시 다음 폴더 구조 권장:
+  - `components/`: 재사용 가능한 React 컴포넌트
+  - `lib/`: API 호출 함수, 유틸리티
+  - `hooks/`: 커스텀 React 훅
+  - `types/`: TypeScript 인터페이스
 
 ## API 문서
 백엔드 실행 후 http://localhost:8000/docs 에서 Swagger UI로 API 문서 확인 가능합니다.
 
 ## 데이터베이스
-SQLite 파일(`app.db`)은 backend 폴더에 생성됩니다. 서버 첫 실행 시 테이블이 자동 생성됩니다.
+
+- **DB 파일**: `backend/app.db` (서버 첫 실행 시 자동 생성)
+- **ORM**: SQLAlchemy 2.0
+- **자동 마이그레이션**: `Base.metadata.create_all(bind=engine)` (main.py:8)
+- **세션 관리**: `get_db()` 의존성 주입 함수 사용
+- **SQLite 설정**: `check_same_thread=False` (멀티스레드 지원)
+
+### 데이터베이스 초기화
+
+```bash
+# DB 초기화가 필요한 경우
+cd backend
+rm app.db  # 기존 DB 삭제
+uvicorn app.main:app --reload  # 서버 재시작 시 자동 생성
+```
 
 ## 에이전트 구조
 
@@ -95,8 +176,8 @@ SQLite 파일(`app.db`)은 backend 폴더에 생성됩니다. 서버 첫 실행 
 ### 에이전트 간 협업 규칙
 
 1. **영역 침범 금지**: 각 에이전트는 자신의 담당 영역만 수정합니다.
-   - db-agent는 `backend/app/models/`, `backend/app/crud/`, `backend/app/database.py`만 수정
-   - be-agent는 `backend/app/routers/`, `backend/app/schemas/`, `backend/app/services/`만 수정
+   - db-agent는 `backend/app/models/`, `backend/app/database.py` (향후 `crud/` 폴더)만 수정
+   - be-agent는 `backend/app/routers/`, `backend/app/schemas/` (향후 `services/` 폴더)만 수정
    - fe-agent는 `frontend/src/` 하위만 수정
 
 2. **다른 도메인 작업 발견 시**: 직접 수행하지 않고 메인 에이전트에게 보고하여 해당 에이전트 호출을 요청합니다.
@@ -106,3 +187,104 @@ SQLite 파일(`app.db`)은 backend 폴더에 생성됩니다. 서버 첫 실행 
 
 4. **의존성 명시**: 다른 에이전트의 작업에 의존하는 경우 명확히 알립니다.
    - 예: "be-agent 작업 전 db-agent의 User 모델 생성이 필요합니다"
+
+## 개발 시 주의사항
+
+### 백엔드
+
+- **모델 변경 시**: `app.db` 삭제 후 서버 재시작 (자동 마이그레이션)
+- **라우터 추가 시**: `main.py`에 `app.include_router()` 등록 필요
+- **CORS 설정**: 프론트엔드 도메인이 `http://localhost:3000`으로 고정됨
+- **의존성 주입**: DB 세션은 `Depends(get_db)` 패턴 사용
+
+### 프론트엔드
+
+- **API 호출**: `/api/*` 경로는 자동으로 백엔드(`localhost:8000`)로 프록시됨
+- **TypeScript**: Path alias `@/*` 사용 가능 (예: `@/components/Button`)
+- **스타일링**: Tailwind CSS 클래스 사용 (globals.css에 import됨)
+- **환경변수**: `.env.local` 파일 사용 (`NEXT_PUBLIC_` 접두사 필요)
+
+## 예제 코드
+
+### 백엔드 API 추가 예시
+
+1. **모델 정의** (`models/user.py`):
+```python
+from sqlalchemy import Column, Integer, String
+from app.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+```
+
+2. **스키마 정의** (`schemas/user.py`):
+```python
+from pydantic import BaseModel
+
+class UserCreate(BaseModel):
+    name: str
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    class Config:
+        from_attributes = True
+```
+
+3. **라우터 구현** (`routers/users.py`):
+```python
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models.user import User
+from app.schemas.user import UserCreate, UserResponse
+
+router = APIRouter(prefix="/api/users", tags=["users"])
+
+@router.post("/", response_model=UserResponse)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = User(name=user.name)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+```
+
+4. **라우터 등록** (`main.py`):
+```python
+from app.routers import users
+app.include_router(users.router)
+```
+
+### 프론트엔드 API 호출 예시
+
+```typescript
+// app/users/page.tsx
+"use client";
+import { useEffect, useState } from "react";
+
+export default function UsersPage() {
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/users")  // 자동으로 localhost:8000으로 프록시됨
+      .then(res => res.json())
+      .then(data => setUsers(data));
+  }, []);
+
+  return (
+    <div>
+      {users.map(user => <div key={user.id}>{user.name}</div>)}
+    </div>
+  );
+}
+```
+
+## 참고 문서
+
+- [Porting Guide](.claude/docs/Porting_guide.md) - 설치 및 환경 설정
+- [DB Agent](.claude/agents/db-agent.md) - 데이터베이스 개발 가이드
+- [BE Agent](.claude/agents/be-agent.md) - 백엔드 API 개발 가이드
+- [FE Agent](.claude/agents/fe-agent.md) - 프론트엔드 개발 가이드
