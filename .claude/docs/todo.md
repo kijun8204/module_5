@@ -28,57 +28,55 @@
 
 ---
 
-## Feature 2: 주식 현황 기능
+## [완료] Feature 2: 주식 현황 기능
 
 코스피 시총 TOP 10 종목의 현재가격을 테이블 형태로 보여주는 기능
 
 ### BE (be-agent)
 
 #### 2.1 주식 API 엔드포인트
-- [ ] 주식 라우터 작성 (`backend/app/routers/stocks.py`)
-  - [ ] `GET /api/stocks/kospi-top10` - 코스피 시총 TOP 10 현재가 조회
-- [ ] 주식 스키마 작성 (`backend/app/schemas/stock.py`)
-  - [ ] `StockInfo` - 종목 정보 (종목코드, 종목명, 현재가, 등락률 등)
-  - [ ] `StockListResponse` - 종목 리스트 응답
+- [x] 주식 라우터 작성 (`backend/app/routers/stocks.py`)
+  - [x] `GET /api/stocks/kospi-top10` - 코스피 시총 TOP 10 현재가 조회
+- [x] 주식 스키마 작성 (`backend/app/schemas/stock.py`)
+  - [x] `StockInfo` - 종목 정보 (종목코드, 종목명, 현재가, 등락률 등)
+  - [x] `StockListResponse` - 종목 리스트 응답
 
 #### 2.2 외부 API 연동
-- [ ] 주식 데이터 서비스 작성 (`backend/app/services/stock.py`)
-  - [ ] 한국투자증권 API 또는 공공데이터 API 연동
-  - [ ] 또는 yfinance, pykrx 라이브러리 활용
-  - [ ] 코스피 시총 TOP 10 종목 데이터 조회
+- [x] 주식 데이터 서비스 작성 (`backend/app/services/stock.py`)
+  - [x] pykrx 라이브러리 활용
+  - [x] 코스피 시총 TOP 10 종목 데이터 조회
 
 #### 2.3 의존성 설치
-- [ ] `requirements.txt`에 의존성 추가
-  - [ ] `pykrx` 또는 `yfinance` (주식 데이터)
-  - [ ] `httpx` 또는 `aiohttp` (비동기 HTTP 클라이언트, 필요시)
+- [x] `requirements.txt`에 의존성 추가
+  - [x] `pykrx` (주식 데이터)
 
 ### FE (fe-agent)
 
 #### 2.4 주식 관련 타입 정의
-- [ ] TypeScript 인터페이스 작성 (`frontend/src/types/stock.ts`)
-  - [ ] `Stock` - 종목 정보
-  - [ ] `StockListResponse` - 종목 리스트 응답
+- [x] TypeScript 인터페이스 작성 (`frontend/src/types/stock.ts`)
+  - [x] `Stock` - 종목 정보
+  - [x] `StockListResponse` - 종목 리스트 응답
 
 #### 2.5 API 호출 함수
-- [ ] 주식 API 함수 작성 (`frontend/src/lib/api/stock.ts`)
-  - [ ] `getKospiTop10()` - 코스피 TOP 10 조회
+- [x] 주식 API 함수 작성 (`frontend/src/lib/api/stock.ts`)
+  - [x] `getKospiTop10()` - 코스피 TOP 10 조회
 
 #### 2.6 주식 현황 페이지
-- [ ] 주식 현황 페이지 작성 (`frontend/src/app/stocks/page.tsx`)
-  - [ ] 페이지 제목 (주식 현황)
-  - [ ] 코스피 시총 TOP 10 테이블
-    - [ ] 순위
-    - [ ] 종목코드
-    - [ ] 종목명
-    - [ ] 현재가
-    - [ ] 전일대비 (등락률)
-    - [ ] 거래량 (선택)
-  - [ ] 로딩 상태 표시
-  - [ ] 에러 처리
+- [x] 주식 현황 페이지 작성 (`frontend/src/app/stocks/page.tsx`)
+  - [x] 페이지 제목 (주식 현황)
+  - [x] 코스피 시총 TOP 10 테이블
+    - [x] 순위
+    - [x] 종목코드
+    - [x] 종목명
+    - [x] 현재가
+    - [x] 전일대비 (등락률)
+    - [x] 거래량
+  - [x] 로딩 상태 표시
+  - [x] 에러 처리
 
 #### 2.7 네비게이션 메뉴 추가
-- [ ] 사이드바 또는 헤더에 "주식 현황" 메뉴 추가
-- [ ] 로그인한 사용자만 접근 가능하도록 설정
+- [x] Header 컴포넌트에 "주식 현황" 메뉴 추가 (`frontend/src/components/Header.tsx`)
+- [x] 로그인한 사용자만 접근 가능하도록 설정
 
 ---
 
